@@ -1,0 +1,15 @@
+{
+  "name": "EduMaster Pro",
+  "short_name": "EduMaster",
+  "start_url": "1eJWIrRGpbSKuOgGGD2pBOO37DovgD0A5nhp9PbjNlIA",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#4F46E5",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3414/3414028.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
