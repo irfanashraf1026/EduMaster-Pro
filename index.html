@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EduMaster Pro</title>
     
-    <!-- PWA Manifest Link -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5">
     
@@ -15,11 +14,10 @@
     </style>
 </head>
 <body>
-    <!-- YAHAN APNA GAS WEB APP LINK PASTE KAREIN (jo /exec par khatam hota hai) -->
-    <iframe src="YAHAN_APNA_GAS_LINK_PASTE_KAREIN" allow="camera; microphone; clipboard-read; clipboard-write"></iframe>
+    <!-- Yahan apna script.google.com wala link daalein -->
+    <iframe src="https://script.google.com/macros/s/AKfycbxm3vCsiXydDDu36a2rHJ1Rd5qdU6_nC34jECmdH4CezWyq9Z8PAyrtkRif5a2Ieb0QZQ/exec" allow="camera; microphone"></iframe>
     
     <script>
-        // Service worker register karein taake install button aaye
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
