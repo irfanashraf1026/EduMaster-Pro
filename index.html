@@ -1,27 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EduMaster Pro</title>
-    
-    <!-- App install ke liye zaroori -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4F46E5">
-    
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #F8FAFC; }
-        iframe { width: 100%; height: 100%; border: 0; display: block; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4F46E5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>EduMaster Pro</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--p:#4F46E5;--ps:#EEF2FF;--bg:#F5F6FA;--card:#FFFFFF;--tx:#111827;--mu:#6B7280;--bd:#E5E7EB}
+@media (prefers-color-scheme:dark){:root{--ps:#1E1B4B;--bg:#0B0F19;--card:#111827;--tx:#F9FAFB;--mu:#9CA3AF;--bd:#1F2937}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:calc(86px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--bd);padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;font-weight:800;font-size:18px}
+main{max-width:720px;margin:0 auto;padding:16px}
+h2{font-size:22px;letter-spacing:-.3px}
+.sub{color:var(--mu);font-size:14px;margin:2px 0 16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.grid .card{margin:0}
+.stat b{display:block;font-size:24px}
+.stat span,.muted,label{color:var(--mu);font-size:13px}
+label{display:block;margin:6px 0 4px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border-bottom:0}
+.av{width:38px;height:38px;border-radius:50%;background:var(--ps);color:var(--p);display:grid;place-items:center;font-weight:700;flex:none}
+.grow{flex:1;min-width:0}
+input,select{width:100%;padding:12px 14px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;margin-bottom:10px}
+input:focus,select:focus{outline:2px solid var(--p);border-color:transparent}
+.btn{width:100%;background:var(--p);color:#fff;border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(79,70,229,.3)}
+.btn.g{background:var(--ps);color:var(--p);box-shadow:none}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:var(--card);border-top:1px solid var(--bd);padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
+nav button{background:none;border:0;color:var(--mu);font:inherit;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 14px;cursor:pointer;border-radius:12px}
+nav button.on{color:var(--p);background:var(--ps)}
+nav i{font-style:normal;font-size:20px}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;z-index:9}
+.toast.on{opacity:1}
+.spin{width:24px;height:24px;border:3px solid var(--ps);border-top-color:var(--p);border-radius:50%;margin:30px auto;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-    <!-- Yahan apna script.google.com wala link hai (maine pehle se daal diya hai) -->
-    <iframe src="https://script.google.com/macros/s/AKfycbxm3vCsiXydDDu36a2rHJ1Rd5qdU6_nC34jECmdH4CezWyq9Z8PAyrtkRif5a2Ieb0QZQ/exec" allow="camera; microphone"></iframe>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-    </script>
+<header><span id="title">EduMaster Pro</span></header>
+<main id="app"></main>
+<nav id="nav"></nav>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const hrs=n=>Math.round(n*10)/10;
+let API=localStorage.getItem("em_api")||"";
+let TOKEN=localStorage.getItem("em_token")||"";
+let TAB="home";
+const TABS=[["home","🏠","Home"],["students","👥","Students"],["log","⏱️","Log"],["settings","⚙️","Settings"]];
+
+async function api(action,params={}){
+  if(!API)throw new Error("Settings mein Apps Script URL save karein");
+  const q=new URLSearchParams({...params,action,token:TOKEN});
+  const r=await fetch(API+"?"+q);
+  const j=await r.json().catch(()=>({success:false,message:"Server ka jawab samajh nahi aaya"}));
+  if(!r.ok||j.success===false)throw new Error(j.message||"Request fail hui");
+  return j;
+}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(window._t);window._t=setTimeout(()=>t.classList.remove("on"),2400);}
+const person=s=>`<div class="row"><div class="av">${esc((s.name||"?").charAt(0).toUpperCase())}</div><div class="grow"><b>${esc(s.name)}</b><div class="muted">${esc(s.email)}${s.cls?" · "+esc(s.cls):""}</div></div><div style="text-align:right"><b>${hrs(s.hours)} h</b><div class="muted">${s.progress}%</div></div></div>`;
+
+async function viewHome(){
+  const s=await api("dashboard");
+  return `<h2>Hello${s.appName?", "+esc(s.appName):""} 👋</h2><div class="sub">Class overview</div>
+  <div class="grid">
+    <div class="card stat"><b>${s.students}</b><span>Students</span></div>
+    <div class="card stat"><b>${s.totalHours} h</b><span>Hours logged</span></div>
+    <div class="card stat"><b>${s.avgProgress}%</b><span>Avg progress</span></div>
+  </div>
+  <div class="card"><b>Top students</b><div style="margin-top:8px">${s.top.map(person).join("")||'<div class="muted">Abhi koi data nahi</div>'}</div></div>`;
+}
+async function viewStudents(){
+  const s=await api("students");
+  return `<h2>Students</h2><div class="sub">${s.students.length} students</div>
+  <div class="card"><label for="nEmail">Add student</label><input id="nEmail" type="email" placeholder="Email"><input id="nName" placeholder="Full name"><button class="btn" data-act="add">Add student</button></div>
+  <div class="card">${s.students.map(person).join("")||'<div class="muted">Koi student nahi</div>'}</div>`;
+}
+async function viewLog(){
+  const s=await api("students");
+  if(!s.students.length)return `<h2>Log study time</h2><div class="card muted">Pehle Students tab mein student add karein.</div>`;
+  return `<h2>Log study time</h2><div class="sub">Student, subject aur hours chunein</div>
+  <div class="card">
+    <label for="lStu">Student</label><select id="lStu">${s.students.map(x=>`<option value="${esc(x.email)}">${esc(x.name||x.email)}</option>`).join("")}</select>
+    <label for="lSub">Subject</label><input id="lSub" list="subs" placeholder="e.g. Math">
+    <datalist id="subs"><option>Math</option><option>Physics</option><option>Chemistry</option><option>English</option><option>Urdu</option></datalist>
+    <label for="lHrs">Hours</label><input id="lHrs" type="number" step="0.5" min="0.5" placeholder="e.g. 2">
+    <label for="lNotes">Notes (optional)</label><input id="lNotes" placeholder="Chapter 3 revision">
+    <button class="btn" data-act="log">Save log</button>
+  </div>`;
+}
+async function viewSettings(){
+  let c={APP_NAME:"",GEMINI_API_KEY:"",HOURS_FOR_100_PERCENT:20};
+  if(API){try{c=(await api("config")).config||c;}catch(e){toast("Config load nahi hua: "+e.message);}}
+  return `<h2>Settings</h2><div class="sub">Connection is phone par save hota hai</div>
+  <div class="card"><label for="sApi">Apps Script Web App URL (…/exec)</label><input id="sApi" value="${esc(API)}" placeholder="https://script.google.com/macros/s/…/exec">
+    <label for="sTok">API token</label><input id="sTok" type="password" value="${esc(TOKEN)}">
+    <button class="btn g" data-act="conn">Save connection</button></div>
+  ${API?`<div class="card">
+    <label for="cName">App name</label><input id="cName" value="${esc(c.APP_NAME)}">
+    <label for="cKey">Gemini API key</label><input id="cKey" type="password" value="${esc(c.GEMINI_API_KEY)}">
+    <label for="cHrs">Hours for 100% progress</label><input id="cHrs" type="number" value="${esc(c.HOURS_FOR_100_PERCENT)}">
+    <button class="btn" data-act="cfg">Save settings</button></div>`:""}`;
+}
+
+document.addEventListener("click",async e=>{
+  const nb=e.target.closest("[data-t]");
+  if(nb){TAB=nb.dataset.t;return show();}
+  const b=e.target.closest("[data-act]");
+  if(!b)return;
+  const a=b.dataset.act;
+  try{
+    if(a==="conn"){
+      const na=$("sApi").value.trim(),nt=$("sTok").value.trim();
+      const oa=API,ot=TOKEN;
+      API=na;TOKEN=nt;
+      try{await api("ping");}catch(er){API=oa;TOKEN=ot;throw er;}
+      localStorage.setItem("em_api",na);localStorage.setItem("em_token",nt);
+      toast("Connected ✓");TAB="home";return show();
+    }
+    if(a==="cfg"){
+      await api("saveConfig",{APP_NAME:$("cName").value,GEMINI_API_KEY:$("cKey").value,HOURS_FOR_100_PERCENT:$("cHrs").value});
+      toast("Settings saved ✓");return show();
+    }
+    if(a==="add"){
+      await api("addStudent",{email:$("nEmail").value.trim(),name:$("nName").value.trim()});
+      toast("Student added ✓");return show();
+    }
+    if(a==="log"){
+      await api("logStudy",{email:$("lStu").value,subject:$("lSub").value.trim(),hours:$("lHrs").value,notes:$("lNotes").value.trim()});
+      toast("Log saved ✓");TAB="home";return show();
+    }
+  }catch(err){toast("❌ "+err.message);}
+});
+
+async function show(){
+  if(!API&&TAB!=="settings")TAB="settings";
+  $("title").textContent=TABS.find(t=>t[0]===TAB)[2];
+  $("nav").innerHTML=TABS.map(([k,i,l])=>`<button class="${TAB===k?"on":""}" data-t="${k}"><i>${i}</i>${l}</button>`).join("");
+  $("app").innerHTML='<div class="spin"></div>';
+  const V={home:viewHome,students:viewStudents,log:viewLog,settings:viewSettings};
+  try{$("app").innerHTML=await V[TAB]();}
+  catch(e){$("app").innerHTML=`<div class="card">⚠️ ${esc(e.message)}</div>`;}
+  window.scrollTo(0,0);
+}
+
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+show();
+</script>
 </body>
 </html>
